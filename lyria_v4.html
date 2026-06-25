@@ -1,0 +1,1318 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Music Producer — v4.1</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+
+:root {
+  --bg: #0d0d14;
+  --surface: rgba(255,255,255,0.04);
+  --surface2: rgba(255,255,255,0.07);
+  --border: rgba(255,255,255,0.10);
+  --border-accent: rgba(0,255,204,0.35);
+  --accent: #00ffcc;
+  --accent2: #7c6fff;
+  --text: #e2e2e8;
+  --text2: #888899;
+  --text3: #555566;
+  --glass-shadow: 0 8px 32px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.08);
+  --chat-user: rgba(124,111,255,0.15);
+  --chat-ai: rgba(0,255,204,0.07);
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  min-height: 100vh;
+  padding: 16px;
+  background-image:
+    radial-gradient(ellipse at 20% 20%, rgba(0,255,204,0.04) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 80%, rgba(124,111,255,0.05) 0%, transparent 50%);
+}
+
+/* ── HEADER ── */
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.app-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--accent);
+  letter-spacing: -0.3px;
+}
+.app-title small { font-size: 12px; color: var(--text3); font-weight: 400; }
+.version-badge {
+  background: rgba(0,255,204,0.08);
+  border: 1px solid var(--border-accent);
+  color: var(--accent);
+  border-radius: 20px;
+  padding: 3px 12px;
+  font-size: 11px;
+  font-family: monospace;
+  backdrop-filter: blur(8px);
+}
+
+/* ── LAYOUT ── */
+.layout {
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  gap: 14px;
+  align-items: start;
+}
+@media (max-width: 900px) {
+  .layout { grid-template-columns: 1fr; }
+}
+
+/* ── GLASS PANEL ── */
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  backdrop-filter: blur(20px);
+  box-shadow: var(--glass-shadow);
+  overflow: hidden;
+}
+.panel-header {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--surface2);
+}
+.panel-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.panel-body { padding: 14px 16px; }
+
+/* ── GLASS BUTTON ── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: all 0.18s;
+  backdrop-filter: blur(8px);
+  white-space: nowrap;
+}
+.btn:active { transform: scale(0.97); }
+
+.btn-glass {
+  background: rgba(255,255,255,0.07);
+  border-color: rgba(255,255,255,0.12);
+  color: var(--text);
+}
+.btn-glass:hover { background: rgba(255,255,255,0.12); border-color: rgba(255,255,255,0.2); }
+
+.btn-accent {
+  background: rgba(0,255,204,0.12);
+  border-color: rgba(0,255,204,0.3);
+  color: var(--accent);
+}
+.btn-accent:hover { background: rgba(0,255,204,0.2); border-color: rgba(0,255,204,0.5); }
+
+.btn-purple {
+  background: rgba(124,111,255,0.12);
+  border-color: rgba(124,111,255,0.3);
+  color: #a89fff;
+}
+.btn-purple:hover { background: rgba(124,111,255,0.2); border-color: rgba(124,111,255,0.5); }
+
+.btn-generate {
+  background: linear-gradient(135deg, rgba(124,111,255,0.25), rgba(0,255,204,0.15));
+  border-color: rgba(124,111,255,0.4);
+  color: #fff;
+  font-size: 14px;
+  padding: 11px 20px;
+}
+.btn-generate:hover {
+  background: linear-gradient(135deg, rgba(124,111,255,0.4), rgba(0,255,204,0.25));
+  border-color: rgba(124,111,255,0.7);
+  box-shadow: 0 0 20px rgba(124,111,255,0.3);
+}
+
+.btn-sm {
+  padding: 5px 11px;
+  font-size: 11px;
+  border-radius: 8px;
+}
+
+/* ── CHIP / TAG BUTTON ── */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  color: var(--text2);
+  transition: all 0.15s;
+}
+.chip:hover { border-color: var(--accent); color: var(--accent); background: rgba(0,255,204,0.06); }
+.chip.active { border-color: var(--accent); color: var(--accent); background: rgba(0,255,204,0.1); }
+
+/* ── FIELD ── */
+.field { margin-bottom: 12px; }
+.field label {
+  display: block;
+  font-size: 11px;
+  color: var(--text2);
+  margin-bottom: 5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.field input, .field select, .field textarea {
+  width: 100%;
+  background: rgba(0,0,0,0.3);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 9px 12px;
+  font-size: 13px;
+  color: var(--text);
+  font-family: inherit;
+  transition: border 0.2s;
+}
+.field input:focus, .field select:focus, .field textarea:focus {
+  border-color: var(--border-accent);
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(0,255,204,0.08);
+}
+.field textarea {
+  resize: vertical;
+  font-family: 'Consolas', 'Courier New', monospace;
+  font-size: 12px;
+  line-height: 1.65;
+}
+.field textarea.prompt-output {
+  min-height: 220px;
+  color: #9feccc;
+  background: rgba(0,255,204,0.03);
+  border-color: rgba(0,255,204,0.15);
+}
+.field select option { background: #1a1a2e; }
+
+/* ── ROW ── */
+.row { display: flex; gap: 10px; }
+.row .field { flex: 1; }
+
+/* ── CHIP ROW ── */
+.chip-row { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+
+/* ── STATUS ── */
+.status {
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  margin: 10px 0;
+  display: none;
+  border-left: 3px solid;
+  backdrop-filter: blur(8px);
+}
+.status.success { display:block; background:rgba(0,255,100,0.07); border-color:#00ff64; color:#7affa0; }
+.status.error   { display:block; background:rgba(255,50,50,0.07); border-color:#ff4444; color:#ff8888; }
+.status.info    { display:block; background:rgba(100,150,255,0.07); border-color:#6699ff; color:#99bbff; }
+
+/* ── LOADER ── */
+.loader {
+  display: none;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: rgba(0,0,0,0.25);
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  margin: 10px 0;
+}
+.loader.active { display: flex; }
+.dots { display:flex; gap:4px; }
+.dots span {
+  display:block; width:6px; height:6px;
+  background: var(--accent2);
+  border-radius:50%;
+  animation: bounce 1.2s infinite;
+}
+.dots span:nth-child(2){animation-delay:.2s}
+.dots span:nth-child(3){animation-delay:.4s}
+@keyframes bounce{0%,80%,100%{transform:scale(0.4);opacity:.4}40%{transform:scale(1);opacity:1}}
+.loader-text { font-size:12px; color: var(--text2); font-weight:600; }
+
+/* ── PROMPT STATS ── */
+.prompt-stats {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 8px 0;
+}
+.stat {
+  font-size: 11px;
+  padding: 2px 10px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  color: var(--text3);
+}
+.stat.good  { color: var(--accent); border-color: rgba(0,255,204,0.2); }
+.stat.warn  { color: #ffcc44; border-color: rgba(255,204,44,0.2); }
+.stat.danger{ color: #ff5555; border-color: rgba(255,85,85,0.2); }
+
+/* ── SAVED PROMPTS ── */
+.saved-list {
+  max-height: 130px;
+  overflow-y: auto;
+  background: rgba(0,0,0,0.2);
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  margin-top: 6px;
+}
+.saved-list::-webkit-scrollbar { width:4px; }
+.saved-list::-webkit-scrollbar-thumb { background: var(--border); border-radius:2px; }
+.saved-item {
+  display: flex;
+  align-items: center;
+  padding: 7px 10px;
+  cursor: pointer;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  transition: background 0.15s;
+  gap: 8px;
+}
+.saved-item:last-child { border-bottom: none; }
+.saved-item:hover { background: rgba(0,255,204,0.05); }
+.saved-item .name { flex:1; font-size:11px; color:var(--text2); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.saved-item .date { font-size:10px; color:var(--text3); flex-shrink:0; }
+.saved-item .del  { background:none; border:none; color:var(--text3); cursor:pointer; font-size:11px; padding:0 3px; flex-shrink:0; }
+.saved-item .del:hover { color:#ff5555; }
+.saved-empty { text-align:center; padding:16px; font-size:12px; color:var(--text3); }
+
+/* ── AUDIO ── */
+audio {
+  width:100%;
+  margin-top:10px;
+  border-radius:8px;
+  display:none;
+  filter: invert(0);
+}
+
+/* ── FOUND TAGS ── */
+.found-tags {
+  background: rgba(0,255,204,0.05);
+  border: 1px solid rgba(0,255,204,0.15);
+  border-radius: 6px;
+  padding: 7px 12px;
+  font-size: 11px;
+  color: var(--text2);
+  display: none;
+  margin-bottom: 10px;
+}
+.found-tags strong { color: var(--accent); }
+
+/* ── SECTION DIVIDER ── */
+.divider {
+  height: 1px;
+  background: var(--border);
+  margin: 14px 0;
+}
+
+/* ── SEED ── */
+.seed-row { display:flex; gap:8px; align-items:center; }
+.seed-row input { flex:1; }
+.seed-btn {
+  flex-shrink:0;
+  background: rgba(255,255,255,0.07);
+  border: 1px solid var(--border);
+  border-radius:8px;
+  padding:9px 12px;
+  cursor:pointer;
+  color:var(--text2);
+  font-size:14px;
+  transition: all 0.15s;
+}
+.seed-btn:hover { background:rgba(255,255,255,0.12); color:var(--accent); }
+
+/* ════════════════════════════════════
+   CHAT PANEL
+════════════════════════════════════ */
+.chat-panel {
+  display: flex;
+  flex-direction: column;
+  height: 600px;
+}
+.chat-messages {
+  flex:1;
+  overflow-y:auto;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  scroll-behavior: smooth;
+}
+.chat-messages::-webkit-scrollbar { width:4px; }
+.chat-messages::-webkit-scrollbar-thumb { background:var(--border); border-radius:2px; }
+
+/* bubble */
+.msg {
+  max-width: 92%;
+  padding: 10px 14px;
+  border-radius: 12px;
+  font-size: 13px;
+  line-height: 1.55;
+  word-break: break-word;
+  animation: fadeUp 0.2s ease;
+}
+@keyframes fadeUp { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:none} }
+
+.msg-user {
+  align-self: flex-end;
+  background: var(--chat-user);
+  border: 1px solid rgba(124,111,255,0.2);
+  color: #ccc5ff;
+  border-bottom-right-radius: 4px;
+}
+.msg-ai {
+  align-self: flex-start;
+  background: var(--chat-ai);
+  border: 1px solid rgba(0,255,204,0.12);
+  color: var(--text);
+  border-bottom-left-radius: 4px;
+}
+.msg-system {
+  align-self: center;
+  background: rgba(255,200,0,0.06);
+  border: 1px solid rgba(255,200,0,0.15);
+  color: #ffd060;
+  font-size: 11px;
+  text-align: center;
+  padding: 6px 14px;
+  border-radius: 20px;
+  max-width: 100%;
+}
+/* prompt block inside chat */
+.msg-prompt {
+  align-self: flex-start;
+  background: rgba(0,255,204,0.05);
+  border: 1px solid rgba(0,255,204,0.2);
+  color: #9feccc;
+  font-family: 'Consolas','Courier New',monospace;
+  font-size: 11px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  border-bottom-left-radius: 4px;
+  width: 100%;
+  max-width: 100%;
+}
+.msg-prompt .prompt-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+
+/* thinking indicator */
+.msg-thinking {
+  align-self: flex-start;
+  display: flex;
+  gap:5px;
+  align-items:center;
+  padding: 10px 14px;
+  color: var(--text3);
+  font-size:12px;
+}
+.msg-thinking .dots span { background: var(--text3); width:5px; height:5px; }
+
+/* chat controls */
+.chat-quick {
+  padding: 8px 14px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  gap:5px;
+  flex-wrap: wrap;
+}
+.chat-input-area {
+  padding: 10px 14px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  gap: 8px;
+  align-items: flex-end;
+  background: var(--surface2);
+}
+.chat-input-area textarea {
+  flex:1;
+  background: rgba(0,0,0,0.3);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 9px 12px;
+  font-size: 13px;
+  color: var(--text);
+  font-family: inherit;
+  resize: none;
+  min-height: 40px;
+  max-height: 120px;
+  overflow-y: auto;
+  transition: border 0.2s;
+  line-height: 1.5;
+}
+.chat-input-area textarea:focus { border-color: var(--border-accent); outline:none; box-shadow: 0 0 0 3px rgba(0,255,204,0.07); }
+.send-btn {
+  flex-shrink:0;
+  background: rgba(124,111,255,0.2);
+  border: 1px solid rgba(124,111,255,0.35);
+  border-radius:10px;
+  padding:9px 14px;
+  cursor:pointer;
+  color:#a89fff;
+  font-size:16px;
+  transition: all 0.15s;
+  align-self: flex-end;
+}
+.send-btn:hover { background:rgba(124,111,255,0.35); box-shadow:0 0 12px rgba(124,111,255,0.3); }
+.send-btn:disabled { opacity:0.4; cursor:not-allowed; }
+
+/* chat mode label */
+.chat-mode-badge {
+  font-size:10px;
+  padding:2px 8px;
+  border-radius:10px;
+  background: rgba(0,255,204,0.1);
+  border:1px solid rgba(0,255,204,0.2);
+  color:var(--accent);
+}
+.chat-mode-badge.prompt-mode {
+  background: rgba(124,111,255,0.1);
+  border-color: rgba(124,111,255,0.25);
+  color:#a89fff;
+}
+
+/* ── DEBUG ── */
+.debug {
+  background: rgba(0,0,0,0.3);
+  border-radius:6px;
+  padding:8px 10px;
+  margin-top:10px;
+  font-family:monospace;
+  font-size:11px;
+  color:var(--text3);
+  border:1px solid var(--border);
+  max-height:120px;
+  overflow-y:auto;
+  line-height:1.5;
+  white-space:pre-wrap;
+  word-break:break-all;
+}
+</style>
+</head>
+<body>
+
+<div class="app-header">
+  <div class="app-title">
+    🎵 AI Music Producer
+    <small>Lyria 3 Pro</small>
+  </div>
+  <span class="version-badge">v4.1</span>
+</div>
+
+<div class="layout">
+
+  <!-- ══════════════════════ LEFT — EDITOR ══════════════════════ -->
+  <div>
+
+    <!-- API KEY -->
+    <div class="panel" style="margin-bottom:14px">
+      <div class="panel-body" style="padding:12px 16px">
+        <div class="row">
+          <div class="field" style="margin-bottom:0">
+            <label>🔑 API Key (Google AI Studio)</label>
+            <input type="password" id="apiKey" placeholder="Вставьте ваш Gemini API-ключ">
+          </div>
+          <div class="field" style="flex:0.35;margin-bottom:0">
+            <label>📦 Формат</label>
+            <select id="audioFormat">
+              <option value="mp3">MP3</option>
+              <option value="wav">WAV</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PROMPT EDITOR -->
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title">🎼 Редактор промпта</span>
+        <div style="display:flex;gap:6px;align-items:center">
+          <button class="btn btn-sm btn-glass" onclick="optimizePrompt()">✂️ Авто</button>
+          <button class="btn btn-sm btn-accent" onclick="copyPrompt()">📋</button>
+          <button class="btn btn-sm btn-glass" onclick="savePrompt()">💾</button>
+        </div>
+      </div>
+      <div class="panel-body">
+
+        <!-- Presets -->
+        <div style="margin-bottom:10px">
+          <div style="font-size:11px;color:var(--text3);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px;">🎼 Жанр / пресет</div>
+          <div class="chip-row">
+            <span class="chip" onclick="loadPreset('folk')">🌾 Фолк</span>
+            <span class="chip" onclick="loadPreset('neoclassical')">🎻 Неоклассика</span>
+            <span class="chip" onclick="loadPreset('ambient')">🌌 Эмбиент</span>
+            <span class="chip" onclick="loadPreset('cinematic')">🎬 Кино</span>
+            <span class="chip" onclick="loadPreset('jazz')">🎷 Джаз</span>
+            <span class="chip" onclick="loadPreset('flamenco')">💃 Фламенко</span>
+            <span class="chip" onclick="loadPreset('blues')">🎸 Блюз</span>
+            <span class="chip" onclick="loadPreset('bossa')">🇧🇷 Босса</span>
+            <span class="chip" onclick="loadPreset('piano')">🎹 Пиано</span>
+            <span class="chip" onclick="loadPreset('lofi')">🎧 Lo-Fi</span>
+          </div>
+        </div>
+
+        <!-- Mood -->
+        <div style="margin-bottom:10px">
+          <div style="font-size:11px;color:var(--text3);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px;">🎭 Настроение</div>
+          <div class="chip-row">
+            <span class="chip" data-mood="calm" onclick="setMood('calm')">🌊 Спокойная</span>
+            <span class="chip" data-mood="epic" onclick="setMood('epic')">⚡ Эпичная</span>
+            <span class="chip" data-mood="sad" onclick="setMood('sad')">🌧 Меланхоличная</span>
+            <span class="chip" data-mood="happy" onclick="setMood('happy')">☀️ Радостная</span>
+            <span class="chip" data-mood="mysterious" onclick="setMood('mysterious')">🌙 Таинственная</span>
+            <span class="chip" data-mood="passionate" onclick="setMood('passionate')">🔥 Страстная</span>
+          </div>
+        </div>
+
+        <!-- Found tags -->
+        <div class="found-tags" id="foundTags">🏷️ Найдены теги: <strong id="tagsList"></strong></div>
+
+        <!-- BPM + Seed -->
+        <div class="row" style="margin-bottom:12px">
+          <div class="field" style="margin-bottom:0;flex:0.4">
+            <label>⏱ BPM</label>
+            <input type="text" id="bpm" value="80" placeholder="60-140">
+          </div>
+          <div class="field" style="margin-bottom:0">
+            <label>🎲 Seed</label>
+            <div class="seed-row">
+              <input type="text" id="seed" placeholder="Случайный">
+              <button class="seed-btn" onclick="randomSeed()">🎲</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Описание -->
+        <div class="field">
+          <label>📝 Описание музыки</label>
+          <textarea id="userInput" rows="2" placeholder="Пример: спокойный джаз с саксофоном, ночное кафе"></textarea>
+        </div>
+
+        <!-- Кнопка генерации промпта -->
+        <div style="margin-bottom:12px">
+          <button class="btn btn-accent" onclick="generatePrompt()" style="width:100%;padding:10px">🤖 Gemini сгенерирует промпт</button>
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- Final prompt -->
+        <div class="field">
+          <label>🎼 Готовый промпт <span style="color:var(--text3);font-weight:400;text-transform:none;">(редактируй)</span></label>
+          <textarea id="finalPrompt" class="prompt-output" rows="10" placeholder="Промпт появится здесь — можно редактировать вручную"></textarea>
+        </div>
+
+        <!-- Stats -->
+        <div class="prompt-stats" id="promptStats">
+          <span class="stat" id="charCount">📝 0 симв.</span>
+          <span class="stat" id="sectionCount">📐 0 секций</span>
+          <span class="stat" id="qualityBadge">⚖️ —</span>
+        </div>
+
+        <!-- Structure templates -->
+        <div style="margin-top:8px">
+          <div style="font-size:11px;color:var(--text3);margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px;">📐 Структура</div>
+          <div class="chip-row">
+            <span class="chip" onclick="setStructure('folk')">Фолк</span>
+            <span class="chip" onclick="setStructure('jazz')">Джаз</span>
+            <span class="chip" onclick="setStructure('ambient')">Эмбиент</span>
+            <span class="chip" onclick="setStructure('classical')">Классика</span>
+            <span class="chip" onclick="setStructure('cinematic')">Кино</span>
+            <span class="chip" onclick="setStructure('lofi')">Lo-Fi</span>
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- Saved prompts -->
+        <div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
+            <span style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;">💾 Сохранённые промпты</span>
+            <div style="display:flex;gap:6px">
+              <button class="btn btn-sm btn-glass" onclick="exportPrompts()">📤</button>
+              <button class="btn btn-sm btn-glass" onclick="document.getElementById('fileInput').click()">📥</button>
+              <button onclick="clearSavedPrompts()" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:11px">🗑️</button>
+            </div>
+          </div>
+          <input type="file" id="fileInput" accept=".txt,.json" style="display:none" onchange="importPrompts(event)">
+          <div class="saved-list" id="savedPrompts">
+            <div class="saved-empty">📭 Нет сохранённых промптов</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- GENERATE AUDIO -->
+    <div style="margin-top:14px">
+      <button class="btn btn-generate" onclick="generateAudio()" style="width:100%">🚀 Lyria — Создать аудио</button>
+    </div>
+
+    <!-- Status / Loader / Player -->
+    <div id="status" class="status"></div>
+    <div id="loader" class="loader">
+      <div class="dots"><span></span><span></span><span></span></div>
+      <div class="loader-text" id="loaderText">🎵 Обработка...</div>
+    </div>
+    <audio id="player" controls></audio>
+    <div style="display:none;margin-top:10px" id="downloadArea">
+      <button class="btn btn-glass" onclick="downloadAudio()" style="width:100%">💾 Скачать аудио</button>
+    </div>
+    <div class="debug" id="debugInfo">🎵 AI Music Producer v4.0 — готов к работе</div>
+
+  </div>
+
+  <!-- ══════════════════════ RIGHT — CHAT ══════════════════════ -->
+  <div>
+    <div class="panel chat-panel" id="chatPanel">
+      <div class="panel-header">
+        <span class="panel-title">
+          💬 Чат с продюсером
+          <span class="chat-mode-badge" id="chatModeBadge">советник</span>
+        </span>
+        <button class="btn btn-sm btn-glass" onclick="clearChat()">🗑️ Очистить</button>
+      </div>
+
+      <!-- Messages -->
+      <div class="chat-messages" id="chatMessages">
+        <div class="msg msg-ai">
+          👋 Привет! Я твой AI-продюсер.<br><br>
+          Могу <strong>ответить на вопросы</strong> по музыкальному производству, <strong>сгенерировать промпт</strong> для Lyria, или <strong>изменить текущий промпт</strong> по описанию.<br><br>
+          Просто напиши, что хочешь!
+        </div>
+      </div>
+
+      <!-- Quick actions -->
+      <div class="chat-quick">
+        <span class="chip" style="font-size:11px" onclick="chatQuick('Сделай промпт более грустным и меланхоличным')">😢 Грустнее</span>
+        <span class="chip" style="font-size:11px" onclick="chatQuick('Добавь больше инструментов, сделай богаче')">🎻 Богаче</span>
+        <span class="chip" style="font-size:11px" onclick="chatQuick('Сделай в кинематографическом стиле')">🎬 Кино</span>
+        <span class="chip" style="font-size:11px" onclick="chatQuick('Сделай минималистичным и камерным')">🎹 Минимум</span>
+        <span class="chip" style="font-size:11px" onclick="chatQuick('Создай вариацию: сохрани жанр, измени инструменты')">🎲 Вариация</span>
+        <span class="chip" style="font-size:11px" onclick="chatQuick('Как написать хороший промпт для Lyria?')">❓ Советы</span>
+      </div>
+
+      <!-- Input -->
+      <div class="chat-input-area">
+        <textarea id="chatInput" placeholder="Спроси совет, попроси изменить промпт, или придумай новый..." rows="1"
+          oninput="autoResize(this)"
+          onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChat()}"></textarea>
+        <button class="send-btn" id="sendBtn" onclick="sendChat()">↑</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════
+// DATA & STATE
+// ═══════════════════════════════════════════════════
+const VERSION = 'v4.1';
+
+const STYLE_DATABASE = {
+  genres: {
+    'smooth jazz':'Гладкий джаз, саксофон','cinematic ambient':'Кинематографичный эмбиент',
+    'space ambient':'Космический эмбиент','neoclassical':'Неоклассика, пианино, струнные',
+    'soulful folk':'Душевный фолк','flamenco':'Фламенко','blues':'Блюз',
+    'bossa nova':'Босса нова','lofi hip hop':'Lo-fi хип-хоп'
+  },
+  instruments: {
+    'felt piano':'Мягкое пианино','emotional piano':'Эмоциональное пианино',
+    'grand piano':'Рояль','warm strings':'Тёплые струнные','soaring strings':'Взлетающие струнные',
+    'acoustic guitar':'Акустическая гитара','soft nylon guitar':'Нейлоновая гитара',
+    'double bass':'Контрабас','smooth saxophone':'Мягкий саксофон',
+    'jazz saxophone':'Джазовый саксофон','cinematic percussion':'Кино-перкуссия'
+  },
+  emotions: {
+    'peaceful':'Спокойствие','calm':'Расслабленный','melancholic':'Меланхолия',
+    'emotional':'Эмоциональность','epic':'Эпичность','dramatic':'Драматизм',
+    'passionate':'Страстный','mysterious':'Таинственный'
+  }
+};
+
+const STRUCTURE_TEMPLATES = {
+  folk:{ intro:'Delicate acoustic guitar fingerpicking', section1:'Acoustic guitar with soft piano layers', climax:'Main theme with deep piano chords and warm strings', section2:'Orchestral strings enter and swell', outro:'Strings fade, final acoustic guitar notes' },
+  jazz:{ intro:'Soft saxophone melody, brushes on drums', section1:'Double bass walking, guitar chords', climax:'Full band interplay, saxophone lead', section2:'Improvisational solo', outro:'Fade out softly, final bass note' },
+  ambient:{ intro:'Slow evolving drone, cosmic atmosphere', section1:'Pads enter, layered textures', climax:'Full ambient soundscape, deep bass', section2:'Gradual reduction', outro:'Fade to silence' },
+  classical:{ intro:'Solo piano arpeggios, emotional', section1:'Violin melody enters, melancholic', climax:'Full orchestra, emotional climax', section2:'Cello solo, tension', outro:'Fade to piano and silence' },
+  cinematic:{ intro:'Quiet strings, building tension', section1:'Main theme introduced', climax:'Full orchestra, powerful climax', section2:'Emotional solo', outro:'Epic conclusion' },
+  blues:{ intro:'Solo electric guitar, slow', section1:'Harmonica enters, deep bass', climax:'Full blues band, guitar solo', section2:'Soft harmonica and guitar', outro:'Fading guitar, final breath' },
+  bossa:{ intro:'Soft nylon guitar fingerpicking', section1:'Romantic guitar melody', climax:'Full bossa arrangement', section2:'Guitar solo, light percussion', outro:'Fade to silence' },
+  piano:{ intro:'Soft piano arpeggios', section1:'Main melody, gentle dynamics', climax:'Emotional crescendo', section2:'Soft return, introspective', outro:'Fading notes, final chord' },
+  lofi:{ intro:'Warm vinyl crackle, soft piano', section1:'Chill beat enters, mellow melody', climax:'Full lo-fi arrangement', section2:'Beat softens, melodic solo', outro:'Vinyl crackle, final warmth' }
+};
+
+const PRESETS = {
+  folk:{ desc:'Soulful atmospheric folk, acoustic guitar fingerpicking, soft ambient piano, warm strings, melancholic and cinematic', bpm:80, structure:STRUCTURE_TEMPLATES.folk },
+  neoclassical:{ desc:'Cinematic neoclassical, grand piano arpeggios, melancholic violin melody, orchestral cello, emotional', bpm:75, structure:STRUCTURE_TEMPLATES.classical },
+  ambient:{ desc:'Deep space ambient, ethereal pads, slow evolving drones, cosmic atmosphere, meditative', bpm:60, structure:STRUCTURE_TEMPLATES.ambient },
+  cinematic:{ desc:'Cinematic orchestral, sweeping strings, triumphant brass, powerful percussion', bpm:90, structure:STRUCTURE_TEMPLATES.cinematic },
+  jazz:{ desc:'Smooth jazz, smoky night cafe, soft saxophone lead, warm guitar, double bass walking', bpm:65, structure:STRUCTURE_TEMPLATES.jazz },
+  flamenco:{ desc:'Spanish flamenco acoustic guitar, passionate, virtuoso nylon fingerpicking, rhythmic body taps', bpm:95, structure:{ intro:'Virtuoso flamenco guitar solo', section1:'Developing melody with body taps', climax:'High-energy guitar picking', section2:'Soft acoustic backing', outro:'Fading guitar into silence' } },
+  blues:{ desc:'Slow blues, emotional electric guitar, warm harmonica, deep bass, smoky atmosphere', bpm:70, structure:STRUCTURE_TEMPLATES.blues },
+  bossa:{ desc:'Bossa nova, brazilian nylon guitar, soft percussion, romantic and relaxing', bpm:85, structure:STRUCTURE_TEMPLATES.bossa },
+  piano:{ desc:'Solo piano, emotional and intimate, classical and cinematic, rich harmonies', bpm:72, structure:STRUCTURE_TEMPLATES.piano },
+  lofi:{ desc:'Lo-fi hip hop, chill beats, warm vinyl crackle, relaxed, mellow piano', bpm:78, structure:STRUCTURE_TEMPLATES.lofi }
+};
+
+let currentMood = 'calm';
+let currentStructure = STRUCTURE_TEMPLATES.folk;
+let currentAudioBase64 = null;
+let currentMimeType = 'audio/mpeg';
+
+// Chat history for multi-turn conversation
+let chatHistory = [];
+let chatIsGenerating = false;
+
+// ═══════════════════════════════════════════════════
+// UI HELPERS
+// ═══════════════════════════════════════════════════
+function showStatus(msg, type='info') {
+  const el = document.getElementById('status');
+  el.textContent = msg;
+  el.className = `status ${type}`;
+}
+function showLoader(show, text='⏳ Обработка...') {
+  const l = document.getElementById('loader');
+  l.className = show ? 'loader active' : 'loader';
+  document.getElementById('loaderText').textContent = text;
+}
+function setMood(mood) {
+  currentMood = mood;
+  document.querySelectorAll('[data-mood]').forEach(b => {
+    b.classList.toggle('active', b.dataset.mood === mood);
+  });
+}
+function randomSeed() { document.getElementById('seed').value = Math.floor(Math.random()*1e9); }
+function setStructure(name) {
+  if (STRUCTURE_TEMPLATES[name]) {
+    currentStructure = STRUCTURE_TEMPLATES[name];
+    showStatus(`✅ Структура "${name}" применена`, 'success');
+  }
+}
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+}
+function clearChat() {
+  chatHistory = [];
+  document.getElementById('chatMessages').innerHTML = `<div class="msg msg-ai">💬 Чат очищен. Начни заново!</div>`;
+}
+
+// ═══════════════════════════════════════════════════
+// PROMPT TOOLS
+// ═══════════════════════════════════════════════════
+function findTagsInDatabase(text) {
+  const found = [];
+  const t = text.toLowerCase();
+  for (const cat of Object.values(STYLE_DATABASE)) {
+    for (const [tag, desc] of Object.entries(cat)) {
+      const words = t.split(/[\s,]+/);
+      for (const w of words) {
+        if (w.length>2 && (tag.toLowerCase().includes(w) || w.includes(tag.toLowerCase()) || desc.toLowerCase().includes(w))) {
+          found.push(tag); break;
+        }
+      }
+    }
+  }
+  return [...new Set(found)];
+}
+
+function showFoundTags(tags) {
+  const c = document.getElementById('foundTags');
+  const l = document.getElementById('tagsList');
+  if (tags && tags.length > 0) {
+    l.textContent = tags.join(', ');
+    c.style.display = 'block';
+  } else {
+    c.style.display = 'none';
+  }
+}
+
+function updatePromptStats(text) {
+  const len = text.length;
+  const sections = (text.match(/\[([^\]]+)\]/g)||[]).length;
+  document.getElementById('charCount').textContent = `📝 ${len} симв.`;
+  document.getElementById('sectionCount').textContent = `📐 ${sections} секций`;
+  const q = document.getElementById('qualityBadge');
+  if (len<200){ q.textContent='⚠️ Короткий'; q.className='stat warn'; }
+  else if (len<=400){ q.textContent='🟡 Можно добавить'; q.className='stat warn'; }
+  else if (len<=650){ q.textContent='✅ Оптимально'; q.className='stat good'; }
+  else if (len<=800){ q.textContent='⚠️ Длинноват'; q.className='stat warn'; }
+  else { q.textContent='❌ Слишком длинный'; q.className='stat danger'; }
+}
+
+function buildFullPrompt(userText, bpm, mood, structure) {
+  const moods = { calm:'peaceful, serene, gentle', epic:'majestic, powerful, soaring', sad:'melancholic, heartfelt', happy:'uplifting, bright, joyful', mysterious:'ethereal, atmospheric', passionate:'fiery, intense, passionate' };
+  const m = moods[mood]||'peaceful';
+  return `Pure instrumental, no vocals, 100% no voices. ${userText}. ${m}. ${bpm} bpm.
+
+[Intro: ${structure.intro}]
+[Section 1: ${structure.section1}]
+[Climax: ${structure.climax}]
+[Section 2: ${structure.section2}]
+[Outro: ${structure.outro}]
+[End - 3:00]`.trim();
+}
+
+function loadPreset(name) {
+  const p = PRESETS[name];
+  if (!p) return;
+  document.getElementById('userInput').value = p.desc;
+  document.getElementById('bpm').value = p.bpm;
+  currentStructure = p.structure;
+  const full = buildFullPrompt(p.desc, p.bpm, currentMood, p.structure);
+  document.getElementById('finalPrompt').value = full;
+  updatePromptStats(full);
+  showFoundTags(findTagsInDatabase(p.desc));
+  const moodMap = { folk:'calm', neoclassical:'sad', ambient:'mysterious', cinematic:'epic', jazz:'calm', flamenco:'passionate', blues:'sad', bossa:'calm', piano:'calm', lofi:'calm' };
+  setMood(moodMap[name]||'calm');
+  showStatus(`✅ Пресет "${name}" загружен`, 'success');
+}
+
+function copyPrompt() {
+  const t = document.getElementById('finalPrompt').value;
+  if (!t.trim()) { showStatus('❌ Нет промпта', 'error'); return; }
+  navigator.clipboard?.writeText(t).then(()=>showStatus('📋 Скопировано!','success')).catch(()=>{});
+}
+
+function optimizePrompt() {
+  let t = document.getElementById('finalPrompt').value;
+  if (!t.trim()) { showStatus('❌ Нет промпта', 'error'); return; }
+  const bad = ['christian','worship','gospel','hymn','spiritual','sacred'];
+  for (const w of bad) t = t.replace(new RegExp('\\b'+w+'\\b','gi'),'');
+  t = t.replace(/\s+/g,' ').trim();
+  if (t.length>700) {
+    const parts = t.split('\n\n');
+    if (parts.length>1) {
+      let sp = parts[0].slice(0,250); sp = sp.slice(0,sp.lastIndexOf(' '))||sp; sp+='.';
+      t = sp+'\n\n'+parts.slice(1).join('\n\n');
+    }
+  }
+  if (!t.includes('[End - 3:00]')) t+='\n[End - 3:00]';
+  if (!t.toLowerCase().includes('pure instrumental')) t='Pure instrumental, no vocals, 100% no voices. '+t;
+  document.getElementById('finalPrompt').value = t;
+  updatePromptStats(t);
+  showStatus('✂️ Промпт оптимизирован!','success');
+}
+
+// ═══════════════════════════════════════════════════
+// GENERATE PROMPT via Gemini
+// ═══════════════════════════════════════════════════
+async function generatePrompt() {
+  const userText = document.getElementById('userInput').value.trim();
+  const apiKey = document.getElementById('apiKey').value.trim();
+  const bpm = document.getElementById('bpm').value || '80';
+  const tags = findTagsInDatabase(userText);
+  showFoundTags(tags);
+
+  if (!userText) { showStatus('❌ Напишите описание музыки!','error'); return; }
+  if (!apiKey) {
+    const p = buildFullPrompt(userText, bpm, currentMood, currentStructure);
+    document.getElementById('finalPrompt').value = p;
+    updatePromptStats(p);
+    showStatus('💡 Локальный режим (без API)','info');
+    return;
+  }
+
+  showLoader(true,'🧠 Gemini создаёт промпт...');
+  showStatus('⚡ Отправка в Gemini...','info');
+  try {
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+    const tagsHint = tags.length ? `Используй теги: ${tags.join(', ')}.` : '';
+    const sys = `Ты — эксперт-продюсер Lyria 3 Pro. Создай двухчастный промпт по строгим правилам.
+
+ЧАСТЬ 1 — Sound Description (описание звука):
+- Начинай ВСЕГДА с: "Pure instrumental, 100% no vocals, no voices, no singing, high-quality recording."
+- Далее: главные инструменты, жанр, настроение — через запятую, без прозы
+- BPM в конце через запятую: "75 bpm"
+
+ЧАСТЬ 2 — Structure (с новой строки после пустой строки):
+- Используй ТОЛЬКО эти теги (каждый с новой строки):
+  [Intro: ...]
+  [Instrumental Section 1: ...]
+  [Instrumental Solo: ...]
+  [Atmospheric Bridge: ...]
+  [Outro: ...]
+  [End - 3:00]
+- Внутри скобок описывай ТОЛЬКО поведение инструментов
+- ЗАПРЕЩЕНО: Verse, Chorus, Lyrics, Singer, Vocals
+
+Ответ ТОЛЬКО промпт, без пояснений, без markdown.`;
+    const body = {
+      system_instruction:{parts:[{text:sys}]},
+      contents:[{role:'user',parts:[{text:`Музыка: "${userText}". Темп: ${bpm} BPM. Настроение: ${currentMood}. ${tagsHint}`}]}]
+    };
+    const res = await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    showLoader(false);
+    if (!res.ok) {
+      const e = await res.json().catch(()=>({}));
+      throw new Error(e.error?.message||`Ошибка ${res.status}`);
+    }
+    const data = await res.json();
+    let p = data.candidates?.[0]?.content?.parts?.[0]?.text||'';
+    if (!p) throw new Error('Пустой ответ от Gemini');
+    p = p.replace(/```[a-z]*/gi,'').replace(/```/g,'').trim();
+    // каждый тег с новой строки
+    p = p.replace(/\]\s*\[/g,']\n[').replace(/\n\s+/g,'\n').trim();
+    // гарантируем разделение Sound и Structure блоков
+    p = p.replace(/(\w,)\s*\[/g,'$1\n\n[');
+    // гарантируем [End - 3:00]
+    if (!p.includes('[End -')) p += '\n[End - 3:00]';
+    document.getElementById('finalPrompt').value = p;
+    updatePromptStats(p);
+    showStatus('✅ Промпт готов!','success');
+  } catch(err) {
+    showLoader(false);
+    showStatus(`❌ ${err.message}`,'error');
+  }
+}
+
+// ═══════════════════════════════════════════════════
+// CHAT — multi-turn with real history
+// ═══════════════════════════════════════════════════
+function chatQuick(msg) {
+  document.getElementById('chatInput').value = msg;
+  sendChat();
+}
+
+function appendMsg(type, content, isPromptBlock=false) {
+  const wrap = document.getElementById('chatMessages');
+  const div = document.createElement('div');
+  if (isPromptBlock) {
+    div.className = 'msg msg-prompt';
+    div.textContent = content;
+    // action buttons
+    const actions = document.createElement('div');
+    actions.className = 'prompt-actions';
+    actions.innerHTML = `
+      <button class="btn btn-sm btn-accent" onclick="applyPromptFromChat(this)">✅ Применить</button>
+      <button class="btn btn-sm btn-glass" onclick="navigator.clipboard?.writeText(this.closest('.msg-prompt').childNodes[0].textContent)">📋 Копировать</button>
+    `;
+    div.appendChild(actions);
+  } else if (type === 'thinking') {
+    div.className = 'msg msg-thinking';
+    div.id = 'thinkingBubble';
+    div.innerHTML = '<div class="dots"><span></span><span></span><span></span></div><span>Думаю...</span>';
+  } else {
+    div.className = `msg msg-${type}`;
+    div.innerHTML = content;
+  }
+  wrap.appendChild(div);
+  wrap.scrollTop = wrap.scrollHeight;
+  return div;
+}
+
+function removeThinking() {
+  document.getElementById('thinkingBubble')?.remove();
+}
+
+function applyPromptFromChat(btn) {
+  const block = btn.closest('.msg-prompt');
+  // text nodes only (not the actions div)
+  const promptText = [...block.childNodes].filter(n=>n.nodeType===3).map(n=>n.textContent).join('').trim()
+    || block.textContent.replace(/✅ Применить📋 Копировать/g,'').trim();
+  document.getElementById('finalPrompt').value = promptText;
+  updatePromptStats(promptText);
+  showStatus('✅ Промпт из чата применён!','success');
+  appendMsg('system','✅ Промпт применён в редактор');
+}
+
+async function sendChat() {
+  if (chatIsGenerating) return;
+  const input = document.getElementById('chatInput');
+  const apiKey = document.getElementById('apiKey').value.trim();
+  const userMsg = input.value.trim();
+  if (!userMsg) return;
+
+  input.value = '';
+  input.style.height = 'auto';
+  appendMsg('user', escapeHtml(userMsg));
+
+  if (!apiKey) {
+    appendMsg('ai','⚠️ Вставьте API-ключ в поле выше для работы чата.');
+    return;
+  }
+
+  chatIsGenerating = true;
+  document.getElementById('sendBtn').disabled = true;
+  appendMsg('thinking');
+
+  // Add to history
+  chatHistory.push({ role:'user', parts:[{text:userMsg}] });
+
+  const currentPrompt = document.getElementById('finalPrompt').value.trim();
+
+  // System prompt — AI knows both roles: advisor + prompt generator
+  const systemText = `Ты — профессиональный музыкальный продюсер и эксперт по Lyria 3 Pro (Google AI).
+
+Текущий промпт пользователя:
+${currentPrompt ? `"""\n${currentPrompt}\n"""` : '(промпта ещё нет)'}
+
+РЕЖИМЫ РАБОТЫ — определяй по запросу:
+
+1. СОВЕТНИК — если пользователь задаёт вопрос, просит объяснить, хочет совет. Отвечай развёрнуто, понятно, на русском.
+
+2. ПРОМПТ-ГЕНЕРАТОР — если просит создать новый промпт или изменить существующий. Формат ответа: пара слов что сделал, затем маркеры:
+---PROMPT---
+(здесь только промпт)
+---END---
+
+ПРАВИЛА ПРОМПТА для Lyria 3 Pro (строго):
+
+ЧАСТЬ 1 — Sound Description:
+• Начало ВСЕГДА: "Pure instrumental, 100% no vocals, no voices, no singing, high-quality recording."
+• Далее: инструменты, жанр, настроение — через запятую, без прозы
+• BPM в конце: "75 bpm"
+
+ЧАСТЬ 2 — Structure (после пустой строки):
+• Каждый тег с новой строки
+• Использовать ТОЛЬКО: [Intro: ...] [Instrumental Section 1: ...] [Instrumental Solo: ...] [Atmospheric Bridge: ...] [Outro: ...] [End - 3:00]
+• Внутри скобок — только поведение инструментов
+• ЗАПРЕЩЕНО: Verse, Chorus, Lyrics, Singer, Vocals, Section (без слова Instrumental)
+
+Отвечай живо, как реальный продюсер — без шаблонных фраз.`;
+
+  try {
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+    const body = {
+      system_instruction: { parts:[{text:systemText}] },
+      contents: chatHistory
+    };
+
+    const res = await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    const data = await res.json();
+
+    if (!res.ok) throw new Error(data.error?.message||`Ошибка ${res.status}`);
+
+    let reply = data.candidates?.[0]?.content?.parts?.[0]?.text||'';
+    if (!reply) throw new Error('Пустой ответ');
+
+    // Add to history
+    chatHistory.push({ role:'model', parts:[{text:reply}] });
+
+    // Parse prompt block
+    const promptMatch = reply.match(/---PROMPT---([\s\S]*?)---END---/);
+
+    removeThinking();
+
+    if (promptMatch) {
+      const promptText = promptMatch[1].trim();
+      const commentary = reply.replace(/---PROMPT---[\s\S]*?---END---/,'').trim();
+      if (commentary) appendMsg('ai', escapeHtml(commentary).replace(/\n/g,'<br>'));
+      appendMsg('ai', '', false); // placeholder; actually use prompt block:
+      // remove last empty
+      document.getElementById('chatMessages').lastChild?.remove();
+      appendMsg('prompt', promptText, true);
+      document.getElementById('chatModeBadge').textContent = 'промпт';
+      document.getElementById('chatModeBadge').className = 'chat-mode-badge prompt-mode';
+      setTimeout(()=>{
+        document.getElementById('chatModeBadge').textContent = 'советник';
+        document.getElementById('chatModeBadge').className = 'chat-mode-badge';
+      }, 3000);
+    } else {
+      const html = escapeHtml(reply).replace(/\n/g,'<br>').replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>');
+      appendMsg('ai', html);
+    }
+
+  } catch(err) {
+    removeThinking();
+    appendMsg('ai', `❌ Ошибка: ${escapeHtml(err.message)}`);
+    // rollback last user message from history
+    chatHistory.pop();
+  } finally {
+    chatIsGenerating = false;
+    document.getElementById('sendBtn').disabled = false;
+  }
+}
+
+function escapeHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ═══════════════════════════════════════════════════
+// SAVED PROMPTS
+// ═══════════════════════════════════════════════════
+function savePrompt() {
+  const p = document.getElementById('finalPrompt').value.trim();
+  if (!p) { showStatus('❌ Нет промпта','error'); return; }
+  let saved = JSON.parse(localStorage.getItem('saved_prompts')||'[]');
+  saved.unshift({ id:Date.now(), date:new Date().toLocaleString(), name:p.split('.')[0].slice(0,55)+'...', prompt:p });
+  if (saved.length>50) saved=saved.slice(0,50);
+  localStorage.setItem('saved_prompts',JSON.stringify(saved));
+  renderSavedPrompts();
+  showStatus('💾 Сохранено!','success');
+}
+
+function renderSavedPrompts() {
+  const c = document.getElementById('savedPrompts');
+  const saved = JSON.parse(localStorage.getItem('saved_prompts')||'[]');
+  if (!saved.length) { c.innerHTML='<div class="saved-empty">📭 Нет сохранённых промптов</div>'; return; }
+  c.innerHTML = saved.map((p,i)=>`
+    <div class="saved-item" onclick="loadSaved(${i})">
+      <span class="name">📄 ${p.name||'Промпт #'+(i+1)}</span>
+      <span class="date">${(p.date||'').split(',')[0]}</span>
+      <button class="del" onclick="event.stopPropagation();delSaved(${i})">✕</button>
+    </div>`).join('');
+}
+
+function loadSaved(i) {
+  const saved = JSON.parse(localStorage.getItem('saved_prompts')||'[]');
+  if (saved[i]) { document.getElementById('finalPrompt').value=saved[i].prompt; updatePromptStats(saved[i].prompt); showStatus('📄 Загружен','success'); }
+}
+function delSaved(i) {
+  let s=JSON.parse(localStorage.getItem('saved_prompts')||'[]'); s.splice(i,1);
+  localStorage.setItem('saved_prompts',JSON.stringify(s)); renderSavedPrompts();
+}
+function clearSavedPrompts() {
+  if (confirm('Удалить все сохранённые промпты?')) { localStorage.setItem('saved_prompts','[]'); renderSavedPrompts(); }
+}
+function exportPrompts() {
+  const s=JSON.parse(localStorage.getItem('saved_prompts')||'[]');
+  if (!s.length) { showStatus('❌ Нет промптов','error'); return; }
+  let t=`AI Music Producer — Экспорт промптов\n${new Date().toLocaleString()}\n${'='.repeat(50)}\n\n`;
+  s.forEach((p,i)=>{ t+=`#${i+1} | ${p.date}\n${p.name}\n${'─'.repeat(40)}\n${p.prompt}\n\n${'='.repeat(50)}\n\n`; });
+  const blob=new Blob([t],{type:'text/plain;charset=utf-8'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download=`prompts_${new Date().toISOString().slice(0,10)}.txt`;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+}
+function importPrompts(e) {
+  const file=e.target.files[0]; if (!file) return;
+  const r=new FileReader();
+  r.onload=ev=>{
+    const lines=ev.target.result.split('\n'); let cur='', imported=[]; let inP=false;
+    for (const l of lines) {
+      if (l.startsWith('#')&&l.includes('|')) { if (inP&&cur.trim()) imported.push(cur.trim()); inP=true; cur=''; }
+      else if (inP&&!l.startsWith('─')&&!l.startsWith('=')) cur+=l+'\n';
+    }
+    if (inP&&cur.trim()) imported.push(cur.trim());
+    if (!imported.length) { showStatus('❌ Не найдено','error'); return; }
+    let s=JSON.parse(localStorage.getItem('saved_prompts')||'[]');
+    imported.forEach(p=>s.unshift({id:Date.now()+Math.random(),date:new Date().toLocaleString(),name:p.slice(0,55)+'...',prompt:p}));
+    if (s.length>50) s=s.slice(0,50);
+    localStorage.setItem('saved_prompts',JSON.stringify(s));
+    renderSavedPrompts(); showStatus(`📥 Импортировано ${imported.length}`,'success');
+  };
+  r.readAsText(file); e.target.value='';
+}
+
+// ═══════════════════════════════════════════════════
+// AUDIO GENERATION
+// ═══════════════════════════════════════════════════
+async function generateAudio() {
+  const prompt = document.getElementById('finalPrompt').value.trim();
+  const apiKey = document.getElementById('apiKey').value.trim();
+  const seed = document.getElementById('seed').value.trim();
+  const player = document.getElementById('player');
+  const dlArea = document.getElementById('downloadArea');
+
+  if (!prompt) { showStatus('❌ Сначала создайте промпт!','error'); return; }
+  if (!apiKey) { showStatus('❌ Вставьте API-ключ!','error'); return; }
+
+  try { localStorage.setItem('lyria_api_key',apiKey); } catch(e){}
+
+  showLoader(true,'🎵 Lyria синтезирует аудио...');
+  showStatus('🎵 Генерация...','info');
+  player.style.display='none';
+  dlArea.style.display='none';
+
+  try {
+    const payload = { contents:[{parts:[{text:prompt}]}] };
+    if (seed) payload.generationConfig = { seed:parseInt(seed,10) };
+    const url=`https://generativelanguage.googleapis.com/v1beta/models/lyria-3-pro-preview:generateContent?key=${apiKey}`;
+    const res = await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    showLoader(false);
+    if (!res.ok) {
+      const e=await res.json().catch(()=>({}));
+      throw new Error(e.error?.message||`Ошибка ${res.status}`);
+    }
+    const data=await res.json();
+    let audio64=null, mime='audio/mpeg';
+    for (const c of (data.candidates||[])) {
+      for (const p of (c.content?.parts||[])) {
+        if (p.inlineData?.data) { audio64=p.inlineData.data; mime=p.inlineData.mimeType||mime; break; }
+      }
+      if (audio64) break;
+    }
+    if (!audio64) {
+      const txt=data.candidates?.[0]?.content?.parts?.[0]?.text;
+      throw new Error(txt?`Lyria вернула текст: ${txt.slice(0,100)}...`:'Аудио не найдено в ответе');
+    }
+    currentAudioBase64=audio64; currentMimeType=mime;
+    player.src=`data:${mime};base64,${audio64}`;
+    player.style.display='block';
+    dlArea.style.display='block';
+    try { await player.play(); } catch(e){}
+    document.getElementById('debugInfo').textContent=`✅ Готово! Формат: ${mime} | ${Math.round(audio64.length/1024)} KB | Seed: ${seed||'random'} | ${VERSION}`;
+    showStatus('✅ Композиция готова!','success');
+  } catch(err) {
+    showLoader(false);
+    showStatus(`❌ ${err.message}`,'error');
+    document.getElementById('debugInfo').textContent=`❌ ${err.message}`;
+  }
+}
+
+function downloadAudio() {
+  if (!currentAudioBase64) return;
+  const ext=document.getElementById('audioFormat').value==='wav'?'wav':'mp3';
+  const mime=ext==='wav'?'audio/wav':'audio/mpeg';
+  const bytes=atob(currentAudioBase64), ab=new ArrayBuffer(bytes.length), ia=new Uint8Array(ab);
+  for (let i=0;i<bytes.length;i++) ia[i]=bytes.charCodeAt(i);
+  const url=URL.createObjectURL(new Blob([ab],{type:mime}));
+  const a=document.createElement('a'); a.href=url;
+  a.download=`track_${Date.now()}.${ext}`;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+
+// ═══════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════
+document.getElementById('finalPrompt').addEventListener('input',function(){updatePromptStats(this.value);});
+
+(function init(){
+  try { const k=localStorage.getItem('lyria_api_key'); if(k) document.getElementById('apiKey').value=k; } catch(e){}
+  setMood('calm');
+  renderSavedPrompts();
+  console.log(`🎵 AI Music Producer ${VERSION}`);
+})();
+</script>
+</body>
+</html>
