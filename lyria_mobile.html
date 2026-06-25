@@ -1,0 +1,879 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>AI Music Producer — Mobile</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#0d0d14;--surface:rgba(255,255,255,0.04);--surface2:rgba(255,255,255,0.08);
+  --border:rgba(255,255,255,0.10);--border-accent:rgba(0,255,204,0.35);
+  --accent:#00ffcc;--accent2:#7c6fff;--text:#e2e2e8;--text2:#888899;--text3:#555566;
+  --shadow:0 8px 32px rgba(0,0,0,0.5),inset 0 1px 0 rgba(255,255,255,0.07);
+  --tab-h:54px;
+}
+html,body{height:100%;overflow:hidden}
+body{
+  background:var(--bg);color:var(--text);
+  font-family:'Segoe UI',system-ui,sans-serif;
+  display:flex;flex-direction:column;
+  background-image:
+    radial-gradient(ellipse at 15% 15%,rgba(0,255,204,0.05) 0%,transparent 50%),
+    radial-gradient(ellipse at 85% 85%,rgba(124,111,255,0.06) 0%,transparent 50%);
+}
+
+/* HEADER */
+.hdr{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:11px 14px 9px;
+  background:rgba(0,0,0,0.3);border-bottom:1px solid var(--border);
+  backdrop-filter:blur(20px);flex-shrink:0;
+}
+.hdr-title{font-size:15px;font-weight:700;color:var(--accent);display:flex;align-items:center;gap:7px}
+.badge{font-size:10px;padding:2px 9px;border-radius:12px;background:rgba(0,255,204,0.08);border:1px solid rgba(0,255,204,0.25);color:var(--accent);font-family:monospace}
+
+/* TABS */
+.tabs{display:flex;background:rgba(0,0,0,0.25);border-bottom:1px solid var(--border);flex-shrink:0;height:var(--tab-h)}
+.tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;cursor:pointer;border:none;background:none;color:var(--text3);font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;transition:color .2s;border-bottom:2px solid transparent;padding-bottom:2px}
+.tab .icon{font-size:19px;line-height:1}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+
+/* PAGES */
+.pages{flex:1;overflow:hidden;position:relative}
+.page{position:absolute;inset:0;overflow-y:auto;padding:12px 13px 80px;display:none;-webkit-overflow-scrolling:touch}
+.page.active{display:block}
+.page::-webkit-scrollbar{width:3px}
+.page::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+#page-chat{display:none;flex-direction:column;padding:0}
+#page-chat.active{display:flex}
+
+/* CARD */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:14px;backdrop-filter:blur(16px);box-shadow:var(--shadow);margin-bottom:11px;overflow:hidden}
+.card-hdr{padding:10px 13px;border-bottom:1px solid var(--border);background:var(--surface2);display:flex;align-items:center;justify-content:space-between;font-size:12px;font-weight:700;color:var(--text)}
+.card-body{padding:11px 13px}
+
+/* FIELD */
+.field{margin-bottom:10px}
+.field label{display:block;font-size:10px;color:var(--text2);margin-bottom:4px;font-weight:700;text-transform:uppercase;letter-spacing:.5px}
+.field input,.field select,.field textarea{width:100%;background:rgba(0,0,0,0.35);border:1px solid var(--border);border-radius:10px;padding:11px 12px;font-size:14px;color:var(--text);font-family:inherit;transition:border .2s;-webkit-appearance:none}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--border-accent);outline:none;box-shadow:0 0 0 3px rgba(0,255,204,0.08)}
+.field textarea{resize:none;font-family:'Consolas','Courier New',monospace;font-size:12px;line-height:1.65;color:#9feccc;background:rgba(0,255,204,0.03);border-color:rgba(0,255,204,0.15);min-height:200px}
+.field select option{background:#1a1a2e}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:11px 16px;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;border:1px solid transparent;transition:all .18s;backdrop-filter:blur(8px);white-space:nowrap;-webkit-appearance:none}
+.btn:active{transform:scale(0.96)}
+.btn-glass{background:rgba(255,255,255,0.07);border-color:rgba(255,255,255,0.13);color:var(--text)}
+.btn-accent{background:rgba(0,255,204,0.12);border-color:rgba(0,255,204,0.3);color:var(--accent)}
+.btn-purple{background:rgba(124,111,255,0.12);border-color:rgba(124,111,255,0.3);color:#a89fff}
+.btn-red{background:rgba(255,60,60,0.1);border-color:rgba(255,60,60,0.25);color:#ff7777}
+.btn-generate{background:linear-gradient(135deg,rgba(124,111,255,0.25),rgba(0,255,204,0.15));border-color:rgba(124,111,255,0.4);color:#fff;font-size:15px;padding:14px;width:100%;border-radius:14px}
+.btn-sm{padding:6px 11px;font-size:11px;border-radius:8px}
+.btn-row{display:flex;gap:8px}
+.btn-row .btn{flex:1}
+
+/* ROW */
+.row{display:flex;gap:10px}
+.row .field{flex:1;margin-bottom:0}
+
+/* STATS */
+.stats{display:flex;gap:6px;flex-wrap:wrap;margin-top:7px}
+.stat{font-size:10px;padding:3px 9px;border-radius:12px;border:1px solid var(--border);color:var(--text3)}
+.stat.good{color:var(--accent);border-color:rgba(0,255,204,0.2)}
+.stat.warn{color:#ffcc44;border-color:rgba(255,204,44,0.2)}
+.stat.danger{color:#ff5555;border-color:rgba(255,85,85,0.2)}
+
+/* STATUS */
+.status{padding:10px 13px;border-radius:10px;font-size:13px;margin:8px 0;display:none;border-left:3px solid}
+.status.success{display:block;background:rgba(0,255,100,0.07);border-color:#00ff64;color:#7affa0}
+.status.error{display:block;background:rgba(255,50,50,0.07);border-color:#ff4444;color:#ff8888}
+.status.info{display:block;background:rgba(100,150,255,0.07);border-color:#6699ff;color:#99bbff}
+
+/* LOADER */
+.loader{display:none;align-items:center;gap:10px;padding:11px 13px;background:rgba(0,0,0,0.2);border-radius:10px;border:1px solid var(--border);margin:8px 0}
+.loader.active{display:flex}
+.dots{display:flex;gap:4px}
+.dots span{display:block;width:6px;height:6px;background:var(--accent2);border-radius:50%;animation:bounce 1.2s infinite}
+.dots span:nth-child(2){animation-delay:.2s}.dots span:nth-child(3){animation-delay:.4s}
+@keyframes bounce{0%,80%,100%{transform:scale(.4);opacity:.4}40%{transform:scale(1);opacity:1}}
+.loader-txt{font-size:12px;color:var(--text2);font-weight:600}
+
+/* ACTIVE PROMPT BADGE */
+.active-prompt-badge{
+  display:flex;align-items:center;gap:8px;
+  padding:8px 12px;
+  background:rgba(0,255,204,0.06);
+  border:1px solid rgba(0,255,204,0.18);
+  border-radius:10px;margin-bottom:10px;
+  font-size:11px;color:var(--text2);
+}
+.active-prompt-badge .pid{color:var(--accent);font-family:monospace;font-weight:700;font-size:12px}
+.active-prompt-badge .pname{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* PROMPT CARD IN CHAT */
+.prompt-card{
+  align-self:flex-start;width:100%;
+  background:rgba(0,255,204,0.06);
+  border:1px solid rgba(0,255,204,0.2);
+  border-radius:13px;border-bottom-left-radius:4px;
+  padding:11px 13px;
+  animation:fadeUp .2s ease;
+  cursor:pointer;
+  transition:background .15s;
+}
+.prompt-card:active{background:rgba(0,255,204,0.12)}
+.prompt-card .pc-header{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.prompt-card .pc-num{font-size:13px;font-weight:700;color:var(--accent);font-family:monospace}
+.prompt-card .pc-id{font-size:11px;color:var(--text3);font-family:monospace}
+.prompt-card .pc-seed{font-size:11px;color:var(--accent2);font-family:monospace}
+.prompt-card .pc-preview{font-size:11px;color:var(--text2);line-height:1.4;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.prompt-card .pc-tap{font-size:10px;color:var(--text3);margin-top:6px}
+
+/* AUDIO */
+audio{width:100%;border-radius:10px;display:none;margin-top:10px}
+
+/* SESSIONS */
+.sess-list{background:rgba(0,0,0,0.2);border-radius:10px;border:1px solid var(--border)}
+.sess-item{display:flex;align-items:center;padding:11px 12px;border-bottom:1px solid rgba(255,255,255,0.04);gap:8px;position:relative}
+.sess-item:last-child{border-bottom:none}
+.sess-info{flex:1;min-width:0;cursor:pointer}
+.sess-date{font-size:12px;color:var(--text2);font-weight:600}
+.sess-meta{font-size:10px;color:var(--text3);margin-top:2px}
+.sess-menu-btn{background:none;border:none;color:var(--text3);cursor:pointer;padding:4px 8px;font-size:16px;flex-shrink:0}
+.sess-menu-btn:active{color:var(--text)}
+.sess-dropdown{
+  position:absolute;right:10px;top:36px;z-index:100;
+  background:#1a1a2e;border:1px solid var(--border);
+  border-radius:10px;overflow:hidden;min-width:140px;
+  box-shadow:0 8px 24px rgba(0,0,0,0.6);
+  display:none;
+}
+.sess-dropdown.open{display:block}
+.sess-dropdown-item{padding:11px 14px;font-size:13px;cursor:pointer;color:var(--text);border-bottom:1px solid rgba(255,255,255,0.05)}
+.sess-dropdown-item:last-child{border-bottom:none}
+.sess-dropdown-item:active{background:rgba(255,255,255,0.05)}
+.sess-dropdown-item.danger{color:#ff7777}
+.sess-empty{text-align:center;padding:20px;font-size:12px;color:var(--text3)}
+
+/* CHAT */
+.chat-msgs{flex:1;overflow-y:auto;padding:12px 13px;display:flex;flex-direction:column;gap:9px;scroll-behavior:smooth;-webkit-overflow-scrolling:touch}
+.chat-msgs::-webkit-scrollbar{width:3px}
+.chat-msgs::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+.msg{max-width:90%;padding:10px 13px;border-radius:13px;font-size:14px;line-height:1.55;word-break:break-word;animation:fadeUp .2s ease}
+@keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.msg-user{align-self:flex-end;background:rgba(124,111,255,0.15);border:1px solid rgba(124,111,255,0.22);color:#ccc5ff;border-bottom-right-radius:4px}
+.msg-ai{align-self:flex-start;background:rgba(0,255,204,0.07);border:1px solid rgba(0,255,204,0.12);color:var(--text);border-bottom-left-radius:4px}
+.msg-system{align-self:center;background:rgba(255,200,0,0.06);border:1px solid rgba(255,200,0,0.15);color:#ffd060;font-size:11px;text-align:center;padding:5px 13px;border-radius:20px;max-width:100%}
+.msg-thinking{align-self:flex-start;display:flex;gap:5px;align-items:center;padding:10px 13px;color:var(--text3);font-size:12px}
+.msg-thinking .dots span{background:var(--text3);width:5px;height:5px}
+
+.chat-quick{padding:7px 11px;border-top:1px solid var(--border);display:flex;gap:6px;overflow-x:auto;flex-shrink:0;scrollbar-width:none}
+.chat-quick::-webkit-scrollbar{display:none}
+.chip{display:inline-flex;align-items:center;padding:6px 12px;border-radius:20px;font-size:12px;cursor:pointer;border:1px solid var(--border);background:var(--surface2);color:var(--text2);white-space:nowrap;flex-shrink:0;transition:all .15s}
+.chip:active{border-color:var(--accent);color:var(--accent)}
+
+.chat-inp{padding:9px 12px;border-top:1px solid var(--border);display:flex;gap:8px;align-items:flex-end;background:var(--surface2);flex-shrink:0;padding-bottom:max(9px,env(safe-area-inset-bottom))}
+.chat-inp textarea{flex:1;background:rgba(0,0,0,0.35);border:1px solid var(--border);border-radius:12px;padding:10px 12px;font-size:14px;color:var(--text);font-family:inherit;resize:none;min-height:44px;max-height:120px;overflow-y:auto;transition:border .2s;line-height:1.5}
+.chat-inp textarea:focus{border-color:var(--border-accent);outline:none}
+.send-btn{flex-shrink:0;width:44px;height:44px;background:rgba(124,111,255,0.2);border:1px solid rgba(124,111,255,0.35);border-radius:12px;cursor:pointer;color:#a89fff;font-size:18px;display:flex;align-items:center;justify-content:center;align-self:flex-end}
+.send-btn:active{background:rgba(124,111,255,0.4)}
+.send-btn:disabled{opacity:.4}
+
+/* BOTTOM BAR */
+.bottom-bar{position:fixed;bottom:0;left:0;right:0;padding:9px 13px;padding-bottom:max(9px,env(safe-area-inset-bottom));background:rgba(13,13,20,0.93);border-top:1px solid var(--border);backdrop-filter:blur(20px);z-index:10;display:none}
+.bottom-bar.visible{display:block}
+
+/* OVERLAY for dropdown close */
+.overlay{position:fixed;inset:0;z-index:50;display:none}
+.overlay.active{display:block}
+
+/* seed row */
+.seed-row{display:flex;gap:8px;align-items:center}
+.seed-row input{flex:1}
+.seed-btn{flex-shrink:0;background:rgba(255,255,255,0.07);border:1px solid var(--border);border-radius:10px;padding:11px 12px;cursor:pointer;color:var(--text2);font-size:15px}
+.seed-btn:active{color:var(--accent)}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="hdr-title">🎵 AI Music Producer <span class="badge">mobile</span></div>
+  <div style="display:flex;gap:6px">
+    <button class="btn btn-sm btn-glass" onclick="exportSessions()">📤</button>
+    <button class="btn btn-sm btn-glass" onclick="document.getElementById('impFile').click()">📥</button>
+    <input type="file" id="impFile" accept=".json" style="display:none" onchange="importSessions(event)">
+  </div>
+</div>
+
+<div class="tabs">
+  <button class="tab" id="tab-chat" onclick="switchTab('chat')">
+    <span class="icon">💬</span>Чат
+  </button>
+  <button class="tab" id="tab-editor" onclick="switchTab('editor')">
+    <span class="icon">🎼</span>Редактор
+  </button>
+  <button class="tab" id="tab-sessions" onclick="switchTab('sessions')">
+    <span class="icon">📁</span>Сессии
+  </button>
+</div>
+
+<div class="pages">
+
+  <!-- ══ CHAT ══ -->
+  <div class="page" id="page-chat">
+    <div class="chat-msgs" id="chatMsgs">
+      <div class="msg msg-ai">
+        👋 Привет! Я твой AI-продюсер.<br><br>
+        Опиши музыку — создам промпт для Lyria. Или задай вопрос по жанру, звуку, инструментам.
+      </div>
+    </div>
+    <div class="chat-quick">
+      <span class="chip" onclick="qSend('Сделай промпт грустнее и меланхоличнее')">😢 Грустнее</span>
+      <span class="chip" onclick="qSend('Добавь больше инструментов, сделай богаче')">🎻 Богаче</span>
+      <span class="chip" onclick="qSend('Переделай в кинематографическом стиле')">🎬 Кино</span>
+      <span class="chip" onclick="qSend('Сделай минималистичным и камерным')">🎹 Минимум</span>
+      <span class="chip" onclick="qSend('Создай вариацию: тот же жанр, другие инструменты')">🎲 Вариация</span>
+    </div>
+    <div class="chat-inp">
+      <textarea id="chatInput" placeholder="Опиши музыку или задай вопрос..." rows="1"
+        oninput="autoResize(this)"
+        onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChat()}"></textarea>
+      <button class="send-btn" id="sendBtn" onclick="sendChat()">↑</button>
+    </div>
+  </div>
+
+  <!-- ══ EDITOR ══ -->
+  <div class="page" id="page-editor">
+
+    <div class="card">
+      <div class="card-hdr">🔑 API Ключ</div>
+      <div class="card-body">
+        <div class="field" style="margin-bottom:0">
+          <input type="password" id="apiKey" placeholder="Gemini / Lyria API Key">
+        </div>
+      </div>
+    </div>
+
+    <!-- Active prompt badge -->
+    <div class="active-prompt-badge" id="activeBadge" style="display:none">
+      <span>🎼</span>
+      <span class="pid" id="activePid">—</span>
+      <span class="pname" id="activePname">нет промпта</span>
+    </div>
+
+    <div class="card">
+      <div class="card-hdr">
+        🎼 Промпт
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-sm btn-glass" onclick="optimizePrompt()">✂️</button>
+          <button class="btn btn-sm btn-accent" onclick="copyPrompt()">📋</button>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="field" style="margin-bottom:8px">
+          <textarea id="finalPrompt" placeholder="Промпт появится здесь после общения с AI&#10;&#10;Можно редактировать вручную"></textarea>
+        </div>
+        <div class="stats" id="promptStats">
+          <span class="stat" id="charCount">📝 0 симв.</span>
+          <span class="stat" id="sectionCount">📐 0 секций</span>
+          <span class="stat" id="qualityBadge">⚖️ —</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-hdr">⚙️ Параметры</div>
+      <div class="card-body">
+        <div class="row" style="margin-bottom:0">
+          <div class="field">
+            <label>⏱ BPM</label>
+            <input type="number" id="bpm" value="80" min="40" max="200">
+          </div>
+          <div class="field">
+            <label>🎲 Seed</label>
+            <div class="seed-row">
+              <input type="text" id="seed" placeholder="Случайный">
+              <button class="seed-btn" onclick="randomSeed()">🎲</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="status" class="status"></div>
+    <div id="loader" class="loader">
+      <div class="dots"><span></span><span></span><span></span></div>
+      <div class="loader-txt" id="loaderTxt">⏳ Обработка...</div>
+    </div>
+    <audio id="player" controls></audio>
+    <div id="dlBtn" style="display:none;margin-top:8px">
+      <button class="btn btn-glass" onclick="downloadAudio()" style="width:100%">💾 Скачать аудио</button>
+    </div>
+    <div style="height:20px"></div>
+  </div>
+
+  <!-- ══ SESSIONS ══ -->
+  <div class="page" id="page-sessions">
+    <div class="card">
+      <div class="card-hdr">
+        📁 Сессии
+        <button class="btn btn-sm btn-accent" onclick="saveSession()">💾 Сохранить</button>
+      </div>
+      <div class="card-body" style="padding:8px">
+        <div class="sess-list" id="sessList">
+          <div class="sess-empty">📭 Нет сохранённых сессий</div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-hdr">📤📥 Перенос</div>
+      <div class="card-body">
+        <div class="btn-row">
+          <button class="btn btn-glass" onclick="exportSessions()">📤 Экспорт</button>
+          <button class="btn btn-purple" onclick="document.getElementById('impFile2').click()">📥 Импорт</button>
+          <input type="file" id="impFile2" accept=".json" style="display:none" onchange="importSessions(event)">
+        </div>
+        <div style="margin-top:9px;font-size:11px;color:var(--text3);line-height:1.6">
+          Экспорт сохраняет все сессии в JSON. Отправь в Telegram или на почту — открой на другом устройстве и импортируй.
+        </div>
+      </div>
+    </div>
+    <div style="height:20px"></div>
+  </div>
+
+</div>
+
+<!-- BOTTOM BAR -->
+<div class="bottom-bar" id="bottomBar">
+  <button class="btn btn-generate" onclick="generateAudio()">🚀 Lyria — Создать аудио</button>
+</div>
+
+<!-- Overlay to close dropdowns -->
+<div class="overlay" id="overlay" onclick="closeAllDropdowns()"></div>
+
+<script>
+// ═══════════════════════════
+// STATE
+// ═══════════════════════════
+let chatHistory = [];
+let chatBusy = false;
+let currentAudio64 = null;
+let currentMime = 'audio/mpeg';
+let promptCounter = 0;          // порядковый номер промпта в сессии
+let promptStore = {};           // id -> prompt text
+let activePromptId = null;      // текущий промпт в редакторе
+
+// ═══════════════════════════
+// TABS
+// ═══════════════════════════
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+  document.getElementById('page-'+name).classList.add('active');
+  document.getElementById('bottomBar').classList.toggle('visible', name === 'editor');
+  closeAllDropdowns();
+}
+
+// ═══════════════════════════
+// UI HELPERS
+// ═══════════════════════════
+function showStatus(msg, type='info') {
+  const el = document.getElementById('status');
+  el.textContent = msg; el.className = `status ${type}`;
+}
+function showLoader(show, txt='⏳ Обработка...') {
+  const l = document.getElementById('loader');
+  l.className = show ? 'loader active' : 'loader';
+  document.getElementById('loaderTxt').textContent = txt;
+}
+function randomSeed() { document.getElementById('seed').value = Math.floor(Math.random()*1e9); }
+function autoResize(el) { el.style.height='auto'; el.style.height=Math.min(el.scrollHeight,120)+'px'; }
+function esc(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') }
+
+function updateStats(text) {
+  const len = text.length;
+  const sec = (text.match(/\[([^\]]+)\]/g)||[]).length;
+  document.getElementById('charCount').textContent = `📝 ${len} симв.`;
+  document.getElementById('sectionCount').textContent = `📐 ${sec} секций`;
+  const q = document.getElementById('qualityBadge');
+  if(len<200){q.textContent='⚠️ Короткий';q.className='stat warn'}
+  else if(len<=400){q.textContent='🟡 Можно добавить';q.className='stat warn'}
+  else if(len<=650){q.textContent='✅ Оптимально';q.className='stat good'}
+  else{q.textContent='⚠️ Длинноват';q.className='stat warn'}
+}
+
+function copyPrompt() {
+  const t = document.getElementById('finalPrompt').value;
+  if (!t.trim()) return;
+  navigator.clipboard?.writeText(t).then(() => showStatus('📋 Скопировано!','success'));
+}
+
+function optimizePrompt() {
+  let t = document.getElementById('finalPrompt').value;
+  if (!t.trim()) return;
+  if (!t.toLowerCase().includes('pure instrumental')) t = 'Pure instrumental, 100% no vocals, no voices, no singing. ' + t;
+  if (!t.includes('[End -')) t += '\n[End - 3:00]';
+  t = t.replace(/\]\s*\[/g,']\n[').trim();
+  document.getElementById('finalPrompt').value = t;
+  updateStats(t);
+  showStatus('✂️ Оптимизировано!','success');
+}
+
+// ═══════════════════════════
+// ACTIVE PROMPT BADGE
+// ═══════════════════════════
+function setActivePrompt(id, promptText) {
+  activePromptId = id;
+  promptStore[id] = promptText;
+  document.getElementById('finalPrompt').value = promptText;
+  updateStats(promptText);
+
+  const badge = document.getElementById('activeBadge');
+  const pid = promptStore[id] ? id : null;
+  if (pid) {
+    badge.style.display = 'flex';
+    document.getElementById('activePid').textContent = `#${id}`;
+    document.getElementById('activePname').textContent = promptText.split('\n')[0].slice(0,60)+'...';
+  }
+}
+
+// ═══════════════════════════
+// CHAT
+// ═══════════════════════════
+function qSend(msg) {
+  document.getElementById('chatInput').value = msg;
+  sendChat();
+}
+
+function appendMsg(type, content) {
+  const wrap = document.getElementById('chatMsgs');
+  const div = document.createElement('div');
+  div.className = `msg msg-${type}`;
+  div.innerHTML = content;
+  wrap.appendChild(div);
+  wrap.scrollTop = wrap.scrollHeight;
+  return div;
+}
+
+function appendPromptCard(promptText) {
+  promptCounter++;
+  const id = Date.now();
+  promptStore[id] = promptText;
+  const seed = document.getElementById('seed').value || '—';
+  const preview = promptText.split('\n').filter(l=>l.trim()).slice(0,2).join(' ').slice(0,80);
+
+  const wrap = document.getElementById('chatMsgs');
+  const card = document.createElement('div');
+  card.className = 'prompt-card';
+  card.innerHTML = `
+    <div class="pc-header">
+      <span class="pc-num">#${promptCounter}</span>
+      <span class="pc-id">ID: ${id}</span>
+      <span class="pc-seed">Seed: ${seed}</span>
+    </div>
+    <div class="pc-preview">${esc(preview)}</div>
+    <div class="pc-tap">👆 Нажми чтобы открыть в редакторе</div>`;
+  card.onclick = () => {
+    setActivePrompt(id, promptStore[id]);
+    switchTab('editor');
+    appendSystemMsg(`✅ Промпт #${promptCounter} (ID: ${id}) загружен в редактор`);
+  };
+  wrap.appendChild(card);
+  wrap.scrollTop = wrap.scrollHeight;
+  return id;
+}
+
+function appendSystemMsg(text) {
+  const wrap = document.getElementById('chatMsgs');
+  const div = document.createElement('div');
+  div.className = 'msg msg-system';
+  div.textContent = text;
+  wrap.appendChild(div);
+  wrap.scrollTop = wrap.scrollHeight;
+}
+
+function removeThinking() { document.getElementById('thinkBubble')?.remove(); }
+
+async function sendChat() {
+  if (chatBusy) return;
+  const input = document.getElementById('chatInput');
+  const apiKey = document.getElementById('apiKey').value.trim();
+  const msg = input.value.trim();
+  if (!msg) return;
+
+  input.value = ''; input.style.height = 'auto';
+  appendMsg('user', esc(msg));
+
+  if (!apiKey) {
+    appendMsg('ai','⚠️ Вставьте API-ключ на вкладке Редактор.');
+    return;
+  }
+
+  chatBusy = true;
+  document.getElementById('sendBtn').disabled = true;
+
+  // thinking
+  const wrap = document.getElementById('chatMsgs');
+  const thinking = document.createElement('div');
+  thinking.className = 'msg msg-thinking'; thinking.id = 'thinkBubble';
+  thinking.innerHTML = '<div class="dots"><span></span><span></span><span></span></div><span>Думаю...</span>';
+  wrap.appendChild(thinking); wrap.scrollTop = wrap.scrollHeight;
+
+  chatHistory.push({role:'user', parts:[{text:msg}]});
+
+  const currentPrompt = document.getElementById('finalPrompt').value.trim();
+  const bpm = document.getElementById('bpm').value || '80';
+  const seed = document.getElementById('seed').value || 'не задан';
+
+  const sys = `Ты — профессиональный музыкальный продюсер и эксперт по Lyria 3 Pro (Google AI).
+
+Текущий промпт в редакторе:
+${currentPrompt ? `"""\n${currentPrompt}\n"""` : '(пусто)'}
+BPM: ${bpm} | Seed: ${seed}
+
+РЕЖИМЫ (определяй сам по запросу):
+
+1. СОВЕТНИК — вопросы, советы, объяснения. Отвечай на русском, развёрнуто.
+
+2. ПРОМПТ-ГЕНЕРАТОР — создай или измени промпт. Формат ответа:
+Одно предложение что сделал.
+---PROMPT---
+(только промпт)
+---END---
+
+ПРАВИЛА ПРОМПТА для Lyria 3 Pro:
+
+ЧАСТЬ 1 — Sound Description (одна строка через запятую):
+"Pure instrumental, 100% no vocals, no voices, no singing, high-quality recording. [инструменты], [жанр], [настроение], [BPM] bpm"
+
+ЧАСТЬ 2 — Structure (после пустой строки, каждый тег с новой строки):
+[Intro: ...]
+[Instrumental Section 1: ...]
+[Instrumental Solo: ...]
+[Atmospheric Bridge: ...]
+[Outro: ...]
+[End - 3:00]
+
+ЗАПРЕЩЕНО: Verse, Chorus, Lyrics, Singer, Vocals, Section без "Instrumental".
+Внутри тегов — только поведение инструментов.
+
+Отвечай живо, без шаблонных фраз.`;
+
+  try {
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+    const res = await fetch(url, {method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({system_instruction:{parts:[{text:sys}]}, contents:chatHistory})});
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error?.message || `Ошибка ${res.status}`);
+
+    let reply = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    if (!reply) throw new Error('Пустой ответ');
+    chatHistory.push({role:'model', parts:[{text:reply}]});
+
+    const match = reply.match(/---PROMPT---([\s\S]*?)---END---/);
+    removeThinking();
+
+    if (match) {
+      let p = match[1].trim();
+      p = p.replace(/```[a-z]*/gi,'').replace(/```/g,'').trim();
+      p = p.replace(/\]\s*\[/g,']\n[').trim();
+      p = p.replace(/(\w,)\s*\[/g,'$1\n\n[');
+      if (!p.includes('[End -')) p += '\n[End - 3:00]';
+
+      const commentary = reply.replace(/---PROMPT---[\s\S]*?---END---/,'').trim();
+      if (commentary) appendMsg('ai', esc(commentary).replace(/\n/g,'<br>').replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>'));
+
+      const promptId = appendPromptCard(p);
+      // auto-set as active if first or no active
+      if (!activePromptId) setActivePrompt(promptId, p);
+
+    } else {
+      appendMsg('ai', esc(reply).replace(/\n/g,'<br>').replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>'));
+    }
+
+  } catch(err) {
+    removeThinking();
+    appendMsg('ai', `❌ ${esc(err.message)}`);
+    chatHistory.pop();
+  } finally {
+    chatBusy = false;
+    document.getElementById('sendBtn').disabled = false;
+  }
+}
+
+// ═══════════════════════════
+// AUDIO
+// ═══════════════════════════
+async function generateAudio() {
+  const prompt = document.getElementById('finalPrompt').value.trim();
+  const apiKey = document.getElementById('apiKey').value.trim();
+  const seed = document.getElementById('seed').value.trim();
+  const player = document.getElementById('player');
+
+  if (!prompt) { showStatus('❌ Нет промпта — создайте в чате!','error'); return }
+  if (!apiKey) { showStatus('❌ Вставьте API-ключ!','error'); return }
+
+  showLoader(true,'🎵 Lyria создаёт музыку...');
+  showStatus('🎵 Генерация...','info');
+  player.style.display = 'none';
+  document.getElementById('dlBtn').style.display = 'none';
+
+  try {
+    const payload = {contents:[{parts:[{text:prompt}]}]};
+    if (seed) payload.generationConfig = {seed:parseInt(seed,10)};
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/lyria-3-pro-preview:generateContent?key=${apiKey}`;
+    const res = await fetch(url, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)});
+    showLoader(false);
+    if (!res.ok) { const e=await res.json().catch(()=>({})); throw new Error(e.error?.message||`Ошибка ${res.status}`) }
+    const data = await res.json();
+    let a64=null, mime='audio/mpeg';
+    for (const c of (data.candidates||[])) {
+      for (const p of (c.content?.parts||[])) {
+        if (p.inlineData?.data) { a64=p.inlineData.data; mime=p.inlineData.mimeType||mime; break }
+      }
+      if (a64) break;
+    }
+    if (!a64) throw new Error('Аудио не найдено в ответе');
+    currentAudio64=a64; currentMime=mime;
+    player.src=`data:${mime};base64,${a64}`;
+    player.style.display='block';
+    document.getElementById('dlBtn').style.display='block';
+    try { await player.play() } catch(e) {}
+    showStatus('✅ Готово!','success');
+    autoSaveSession();
+  } catch(err) {
+    showLoader(false);
+    showStatus(`❌ ${err.message}`,'error');
+  }
+}
+
+function downloadAudio() {
+  if (!currentAudio64) return;
+  const bytes=atob(currentAudio64), ab=new ArrayBuffer(bytes.length), ia=new Uint8Array(ab);
+  for(let i=0;i<bytes.length;i++) ia[i]=bytes.charCodeAt(i);
+  const url=URL.createObjectURL(new Blob([ab],{type:currentMime}));
+  const a=document.createElement('a'); a.href=url;
+  a.download=`track_${Date.now()}.mp3`;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+
+// ═══════════════════════════
+// SESSIONS
+// ═══════════════════════════
+function buildSessionData() {
+  return {
+    id: Date.now(),
+    date: new Date().toLocaleString(),
+    prompt: document.getElementById('finalPrompt').value.trim(),
+    bpm: document.getElementById('bpm').value,
+    seed: document.getElementById('seed').value,
+    promptCounter,
+    promptStore: {...promptStore},
+    activePromptId,
+    chatHistory: [...chatHistory]
+  };
+}
+
+function getSessions() { return JSON.parse(localStorage.getItem('mp_sessions')||'[]') }
+
+function saveSession() {
+  let sessions = getSessions();
+  sessions.unshift(buildSessionData());
+  if (sessions.length > 30) sessions = sessions.slice(0,30);
+  localStorage.setItem('mp_sessions', JSON.stringify(sessions));
+  renderSessions();
+  showStatus('💾 Сессия сохранена!','success');
+}
+
+function autoSaveSession() {
+  // сохраняем автоматически под id=0 (перезаписывается)
+  const auto = buildSessionData();
+  auto.id = 0;
+  auto.date = '🔄 Авто: ' + new Date().toLocaleString();
+  let sessions = getSessions().filter(s => s.id !== 0);
+  sessions.unshift(auto);
+  if (sessions.length > 30) sessions = sessions.slice(0,30);
+  localStorage.setItem('mp_sessions', JSON.stringify(sessions));
+  renderSessions();
+}
+
+function loadSession(id) {
+  const s = getSessions().find(s => s.id === id);
+  if (!s) return;
+
+  document.getElementById('bpm').value = s.bpm || '80';
+  document.getElementById('seed').value = s.seed || '';
+  chatHistory = [...(s.chatHistory||[])];
+  promptCounter = s.promptCounter || 0;
+  promptStore = {...(s.promptStore||{})};
+  activePromptId = s.activePromptId || null;
+
+  // restore prompt in editor
+  if (s.prompt) {
+    document.getElementById('finalPrompt').value = s.prompt;
+    updateStats(s.prompt);
+  }
+  // update badge
+  if (activePromptId && promptStore[activePromptId]) {
+    document.getElementById('activeBadge').style.display = 'flex';
+    document.getElementById('activePid').textContent = `#${activePromptId}`;
+    document.getElementById('activePname').textContent = promptStore[activePromptId].split('\n')[0].slice(0,60)+'...';
+  }
+
+  // restore chat
+  const wrap = document.getElementById('chatMsgs');
+  wrap.innerHTML = '<div class="msg msg-system">📂 Сессия восстановлена</div>';
+
+  let pIdx = 0;
+  const promptIds = Object.keys(promptStore).map(Number).sort((a,b)=>a-b);
+
+  for (const m of chatHistory) {
+    if (m.role === 'user') {
+      const d = document.createElement('div');
+      d.className='msg msg-user'; d.textContent=m.parts[0].text;
+      wrap.appendChild(d);
+    } else {
+      const txt = m.parts[0].text;
+      const match = txt.match(/---PROMPT---([\s\S]*?)---END---/);
+      if (match) {
+        const commentary = txt.replace(/---PROMPT---[\s\S]*?---END---/,'').trim();
+        if (commentary) {
+          const d=document.createElement('div');d.className='msg msg-ai';
+          d.innerHTML=esc(commentary).replace(/\n/g,'<br>');wrap.appendChild(d);
+        }
+        // find matching prompt id
+        const pid = promptIds[pIdx] || Date.now();
+        const ptext = promptStore[pid] || match[1].trim();
+        pIdx++;
+        const seed2 = s.seed || '—';
+        const preview = ptext.split('\n').filter(l=>l.trim()).slice(0,2).join(' ').slice(0,80);
+        const card = document.createElement('div');
+        card.className='prompt-card';
+        const num = pIdx;
+        card.innerHTML=`
+          <div class="pc-header">
+            <span class="pc-num">#${num}</span>
+            <span class="pc-id">ID: ${pid}</span>
+            <span class="pc-seed">Seed: ${seed2}</span>
+          </div>
+          <div class="pc-preview">${esc(preview)}</div>
+          <div class="pc-tap">👆 Нажми чтобы открыть в редакторе</div>`;
+        card.onclick = () => {
+          setActivePrompt(pid, ptext);
+          switchTab('editor');
+          appendSystemMsg(`✅ Промпт #${num} (ID: ${pid}) загружен в редактор`);
+        };
+        wrap.appendChild(card);
+      } else {
+        const d=document.createElement('div');d.className='msg msg-ai';
+        d.innerHTML=esc(txt).replace(/\n/g,'<br>').replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>');
+        wrap.appendChild(d);
+      }
+    }
+  }
+  wrap.scrollTop = wrap.scrollHeight;
+  closeAllDropdowns();
+  switchTab('chat');
+}
+
+function deleteSession(id) {
+  let sessions = getSessions().filter(s => s.id !== id);
+  localStorage.setItem('mp_sessions', JSON.stringify(sessions));
+  renderSessions();
+  closeAllDropdowns();
+}
+
+function clearAllSessions() {
+  if (confirm('Удалить все сессии?')) {
+    localStorage.removeItem('mp_sessions');
+    renderSessions();
+  }
+}
+
+function renderSessions() {
+  const c = document.getElementById('sessList');
+  const sessions = getSessions();
+  if (!sessions.length) { c.innerHTML='<div class="sess-empty">📭 Нет сохранённых сессий</div>'; return }
+  c.innerHTML = sessions.map(s => `
+    <div class="sess-item" id="sitem-${s.id}">
+      <div class="sess-info" onclick="loadSession(${s.id})">
+        <div class="sess-date">${s.date}</div>
+        <div class="sess-meta">${s.prompt ? s.prompt.slice(0,50)+'...' : 'нет промпта'}</div>
+      </div>
+      <button class="sess-menu-btn" onclick="toggleDropdown(event,${s.id})">⋮</button>
+      <div class="sess-dropdown" id="dd-${s.id}">
+        <div class="sess-dropdown-item" onclick="loadSession(${s.id})">📂 Загрузить</div>
+        <div class="sess-dropdown-item danger" onclick="deleteSession(${s.id})">🗑️ Удалить</div>
+      </div>
+    </div>`).join('');
+}
+
+function toggleDropdown(e, id) {
+  e.stopPropagation();
+  const dd = document.getElementById('dd-'+id);
+  const isOpen = dd.classList.contains('open');
+  closeAllDropdowns();
+  if (!isOpen) {
+    dd.classList.add('open');
+    document.getElementById('overlay').classList.add('active');
+  }
+}
+
+function closeAllDropdowns() {
+  document.querySelectorAll('.sess-dropdown.open').forEach(d => d.classList.remove('open'));
+  document.getElementById('overlay').classList.remove('active');
+}
+
+// ═══════════════════════════
+// EXPORT / IMPORT
+// ═══════════════════════════
+function exportSessions() {
+  const sessions = getSessions();
+  if (!sessions.length) { alert('Нет сессий для экспорта'); return }
+  const blob = new Blob([JSON.stringify(sessions,null,2)],{type:'application/json'});
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = `mp_sessions_${new Date().toISOString().slice(0,10)}.json`;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+}
+
+function importSessions(e) {
+  const file = e.target.files[0]; if (!file) return;
+  const r = new FileReader();
+  r.onload = ev => {
+    try {
+      const imported = JSON.parse(ev.target.result);
+      if (!Array.isArray(imported)) throw new Error('Неверный формат');
+      let existing = getSessions();
+      const ids = new Set(existing.map(s=>s.id));
+      let added = 0;
+      for (const s of imported) { if (!ids.has(s.id)) { existing.push(s); added++ } }
+      existing.sort((a,b)=>b.id-a.id);
+      if (existing.length>30) existing=existing.slice(0,30);
+      localStorage.setItem('mp_sessions', JSON.stringify(existing));
+      renderSessions();
+      alert(`✅ Импортировано ${added} сессий`);
+    } catch(err) { alert('❌ Ошибка: '+err.message) }
+  };
+  r.readAsText(file);
+  e.target.value = '';
+}
+
+// ═══════════════════════════
+// INIT
+// ═══════════════════════════
+document.getElementById('finalPrompt').addEventListener('input', function(){ updateStats(this.value) });
+
+(function init(){
+  try { const k=localStorage.getItem('lyria_api_key'); if(k) document.getElementById('apiKey').value=k } catch(e){}
+  document.getElementById('apiKey').addEventListener('input', function(){
+    try { localStorage.setItem('lyria_api_key',this.value) } catch(e){}
+  });
+  renderSessions();
+  switchTab('chat');
+})();
+</script>
+</body>
+</html>
